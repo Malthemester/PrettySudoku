@@ -12,37 +12,12 @@ import { CollectResources } from './HelperFunctions/getResources'
 let seleNumber = 1
 
 export default function App(paams) {
-	let id = "0#"
 
-	class Resource {
-		Name = "name"
-		Value = 0
-		Interval = 0
-		AmountPar = 0
-		Display = false
-
-		constructor(name, value, interval, incremenAmount, display) {
-			this.Name = name
-			this.Value = value
-			this.Interval = interval
-			this.IncremenAmount = incremenAmount
-			this.Display = display
-		}
-	}
-
-	let currencys =
-		[
-			new Resource("4x4", 0, 0, 0, true),
-			new Resource("9x9", 0, 0, 0, false)
-		]
-
-	const [resources, SetResources] = useState(currencys)
 	const [selectedNumber, SetSelectedNumber] = useState(seleNumber)
-	const [GobalsActives, SetGobalsActives] = useState([false])
+	const [size, Setsize] = useState(9)
+	const [remove, Setremove] = useState(30)
 
 	useEffect(() => {
-		SetResources([...LoadAllResources()])
-		GetIncrementels()
 	}, [])
 
 	useEffect(() => {
@@ -59,23 +34,6 @@ export default function App(paams) {
 		};
 	}, []);
 
-	function GetIncrementels() {
-		let tempActives = GobalsActives
-
-		tempActives[0] = LoadResources(id + gobalShopItemsTemp[0].Name) > 0
-
-		SetGobalsActives(tempActives)
-	}
-
-	function LoadAllResources() {
-		currencys.map((currency, index, currencys) => {
-			currencys[index].Value = LoadResources(currency.Name)
-			if (currencys[index].Value > 0)
-				currencys[index].Display = true
-		})
-
-		return currencys
-	}
 
 	const handleNumberClick = (number) => {
 		seleNumber = number.target.value
@@ -88,108 +46,56 @@ export default function App(paams) {
 		}
 		let tempGameBoard = [...gameBoard]
 		if (IsInSolve(id, `${x}${y}${seleNumber}`, gameBoard)) {
-			let tempResources = resources
 			let name = `${gameBoard.length}x${gameBoard.length}`
 
-			tempResources.find(resource => resource.Name == name).Value = CollectResources(name, amount)
-
-			SetResources([...tempResources])
 		}
 		tempGameBoard[x][y] = String(seleNumber)
 		SetGameBoard([...tempGameBoard])
 		SaveBoard(tempGameBoard, id + "curBoard")
-
 	}
 
-	let gobalShopItemsTemp = gobalShopItems()
+	function selectSize(size) {
+		Setsize(size)
 
-	class PurchaseFunc {
-		constructor(name, func) {
-			this.Name = name
-			this.Func = func
+		if (remove > size * size) {
+			Setremove(7)
 		}
-	}
-
-	let pruchaseFuncs = [
-		new PurchaseFunc(gobalShopItemsTemp[0].Name, Purchase9x9),
-	]
-
-	function Purchase(costs, keyName, max) {
-
-		let tempMax = LoadResources(keyName)
-		if (tempMax >= max) {
-			return
-		}
-
-		SaveResources(keyName, tempMax + 1)
-		let tempResources = resources
-
-		costs.forEach(price => {
-			let resourceIndex = tempResources.findIndex(resource => resource.Name == price[0])
-			tempResources[resourceIndex].Value = tempResources[resourceIndex].Value - price[1]
-			SaveResources(price[0], tempResources[resourceIndex].Value)
-		})
-
-		SetResources([...tempResources])
-	}
-
-	function Purchase9x9(costs, keyName, max, id) {
-		Purchase(costs, id + keyName, max)
-		let tempActive = GobalsActives
-		tempActive[0] = true
-		let tempResources = resources
-		tempResources[1].Display = true
-		SetResources([...tempResources])
-		SetGobalsActives([...tempActive])
 	}
 
 	return (
 		<div>
+
 			<Header></Header>
+			<div className="main">
+				<div className="selecter">
+					<div className="container">
+						Size of sudoku
+						<select name="Size" onChange={e => selectSize(Number(e.target.value))}>
+							<option value="9">9x9</option>
+							<option value="4">4x4</option>
+						</select>
+					</div>
+					<div className="container">
+						Removed
+						<input className="range" type="range" id="volume" name="volume" defaultValue={size == 9 ? 30 : 7} value={remove}
+							min="0" max={size * size} onChange={e => Setremove(Number(e.target.value))} />
 
-			<DisplayResources resources={resources} ></DisplayResources>
-			<NumberInput selectedNumber={selectedNumber} size={GobalsActives[0] ? 9 : 4} callBack={handleNumberClick} />
-
-			<div className="gameshop">
-
-				<div >
+						<span id="rangeValue">{remove}</span>
+					</div>
+				</div>
+				<div className="game">
+					{/* <NumberInput selectedNumber={seleNumber} size={size} callBack={handleNumberClick} /> */}
 					<Board
 						id={"1#"}
-						size={4}
-						squares={2}
-						remove={7}
-						resources={resources}
-						setResources={SetResources}
+						size={size}
+						squares={size == 9 ? 3 : 2}
+						remove={remove}
 						handleClick={handleClick}
-						currencys={currencys}
+						handleNumberClick={handleNumberClick}
+						selectedNumber={seleNumber}
 					></Board>
-
-					{
-						GobalsActives[0] ?
-							<Board
-								id={"2#"}
-								size={9}
-								squares={3}
-								remove={45}
-								resources={resources}
-								setResources={SetResources}
-								handleClick={handleClick}
-								currencys={currencys}
-							></Board>
-							: null
-					}
-				</div>
-				<div>
-					<Shop
-						resources={resources}
-						pruchaseFuncs={pruchaseFuncs}
-						name={"Global Shop"}
-						id={id}
-						items={gobalShopItemsTemp}
-					></Shop>
 				</div>
 			</div>
-
 		</div>
 	)
 
